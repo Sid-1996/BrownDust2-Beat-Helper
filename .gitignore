@@ -1,6 +1,6 @@
-# AutoHotkey 專案忽略規則
+# BrownDust2 Beat Helper 忽略規則
 
-# 設定檔（避免上傳個人遊戲設定）
+# 設定檔
 *.ini
 
 # 暫存檔
