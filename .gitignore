@@ -1,0 +1,12 @@
+# AutoHotkey 專案忽略規則
+
+# 設定檔（避免上傳個人遊戲設定）
+*.ini
+
+# 暫存檔
+*.log
+*.tmp
+
+# 系統檔案
+Thumbs.db
+.DS_Store
