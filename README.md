@@ -33,7 +33,7 @@ Perfect for hitting perfect beats without finger fatigue.
 
 ## 📥 下載與使用
 - 直接下載並執行：  
-  [點此下載最新 EXE](./BrownDust2%20Beat%20Helper.exe)  
+  [點此下載最新 EXE](./BD2屁股達人音遊腳本.exe)  
 - 或查看原始碼：  
   [BrownDust2 Beat Helper.ahk](./BrownDust2%20Beat%20Helper.ahk)
 
