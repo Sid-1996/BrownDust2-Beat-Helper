@@ -1,9 +1,9 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 
-; @Purpose: 棕色塵埃2 半自動小遊戲輔助 (完善版)
+; @Purpose: 棕色塵埃2 
 ; @Author: Sid  
-; @Version: 3.3
+; @Version: 2.0
 ; @LastUpdated: 2025-08-16
 ; @NewFeatures: 可調整大小的拖拽框、INI設定儲存/載入
 
@@ -1002,4 +1002,5 @@ try {
     ; 初始化失敗處理
     MsgBox("程式初始化失敗:`n" . err.Message, "錯誤", "OK Icon16")
     ExitApp()
+
 }
