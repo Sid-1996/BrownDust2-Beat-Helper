@@ -49,3 +49,12 @@ Perfect for hitting perfect beats without finger fatigue.
 ## 📜 授權
 本專案採用 **CC BY-NC 4.0** 授權：可自由分享與修改，但需標註來源且不得商業使用。  
 詳見 [`LICENSE`](LICENSE) 檔案。
+
+---
+
+## ☕ 支持作者
+- [💚 綠界科技贊助（支持作者）](https://p.ecpay.com.tw/E0E3A)  
+- [☕ Buy Me a Coffee](https://www.paypal.com/ncp/payment/ARWX3ZS893UKU)  
+- [🔗 Support This Project](https://www.paypal.com/ncp/payment/4YCFVARX3ADGW](https://www.paypal.com/ncp/payment/GJS4D5VTSVWG4))  
+
+感謝每一位支持者！💖
