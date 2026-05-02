@@ -80,6 +80,12 @@ global variationSlider := ""
 global variationText := ""
 global statusBar := ""
 
+; 語言系統變數
+global currentLanguage := "zh-TW"  ; 預設語言
+global languageData := ""  ; 語言包數據
+global langDir := A_ScriptDir . "\lang"  ; 語言包目錄
+global languageDropdown := ""  ; 語言選擇下拉選單
+
 ; === 載入設定檔 ===
 LoadSettings() {
     global leftBtn, rightBtn, rapidHit, colorVariation, iniFile
@@ -105,6 +111,9 @@ LoadSettings() {
         
         ; 載入顏色容錯率
         colorVariation := IniRead(iniFile, "Settings", "ColorVariation", colorVariation)
+        
+        ; 載入語言設置
+        currentLanguage := IniRead(iniFile, "Settings", "Language", "zh-TW")
         
     } catch {
         ; 如果讀取失敗，使用預設值
@@ -137,9 +146,127 @@ SaveSettings() {
         ; 儲存顏色容錯率
         IniWrite(colorVariation, iniFile, "Settings", "ColorVariation")
         
+        ; 儲存語言設置
+        IniWrite(currentLanguage, iniFile, "Settings", "Language")
+        
     } catch {
         ; 儲存失敗處理
         ShowTooltip("⚠️ 設定檔儲存失敗", 2000)
+    }
+}
+
+; === 載入語言包 ===
+LoadLanguage(langCode) {
+    global languageData, langDir, currentLanguage
+    
+    try {
+        langFile := langDir . "\" . langCode . ".ini"
+        
+        ; 檢查語言檔案是否存在
+        if !FileExist(langFile) {
+            ; 如果不存在，回退到預設語言
+            langCode := "zh-TW"
+            langFile := langDir . "\" . langCode . ".ini"
+        }
+        
+        ; 使用INI格式讀取語言包
+        languageData := Map()
+        
+        ; 讀取所有section
+        sections := []
+        try {
+            sectionNames := []
+            IniRead(sectionNames, langFile)
+            
+            for section in sectionNames {
+                keys := []
+                IniRead(keys, langFile, section)
+                for key in keys {
+                    value := IniRead(langFile, section, key)
+                    languageData[key] := value
+                }
+            }
+        } catch {
+            ; 如果沒有section，直接讀取key-value對
+            languageData := LoadLanguageFromINI(langFile)
+        }
+        
+        currentLanguage := langCode
+        return true
+    } catch as err {
+        ; 載入失敗時回退到預設語言
+        try {
+            langFile := langDir . "\zh-TW.ini"
+            languageData := LoadLanguageFromINI(langFile)
+            currentLanguage := "zh-TW"
+            return true
+        } catch {
+            return false
+        }
+    }
+}
+
+; === 從INI檔案載入語言數據 ===
+LoadLanguageFromINI(langFile) {
+    result := Map()
+    
+    try {
+        ; 讀取檔案內容
+        fileContent := FileRead(langFile, "UTF-8")
+        
+        ; 解析INI格式
+        lines := StrSplit(fileContent, "`n")
+        for line in lines {
+            line := StrReplace(line, "`r", "")
+            line := StrReplace(line, " ", "")
+            
+            ; 跳過註釋和空行
+            if (line = "" || SubStr(line, 1, 1) = ";" || SubStr(line, 1, 1) = "#")
+                continue
+            
+            ; 解析key=value
+            if (InStr(line, "=")) {
+                parts := StrSplit(line, "=")
+                if (parts.Length >= 2) {
+                    key := parts[1]
+                    value := parts[2]
+                    result[key] := value
+                }
+            }
+        }
+    } catch {
+        ; 如果讀取失敗，返回空Map
+    }
+    
+    return result
+}
+
+; === 獲取語言文字 ===
+GetText(key) {
+    global languageData
+    
+    if (languageData.Has(key)) {
+        return languageData[key]
+    } else {
+        return key  ; 如果找不到，返回key本身
+    }
+}
+
+; === 語言切換處理 ===
+SwitchLanguage(langCode) {
+    global mainGui, languageDropdown
+    
+    ; 載入新語言
+    if (LoadLanguage(langCode)) {
+        ; 重新創建GUI以應用新語言
+        mainGui.Destroy()
+        CreateMainGUI()
+        
+        ; 顯示切換成功提示
+        ShowTooltip("✅ " . GetText("settings_saved"), 1500)
+    } else {
+        ; 語言載入失敗
+        ShowTooltip("❌ Language load failed", 2000)
     }
 }
 
@@ -172,20 +299,23 @@ RestoreDefaultCoordinates() {
     if (showOverlay) {
         DestroyAllOverlays()
         Sleep(100)
-        CreateResizableOverlay("Left", leftBtn, "左側按鈕區域")
-        CreateResizableOverlay("Right", rightBtn, "右側按鈕區域") 
-        CreateResizableOverlay("Rapid", rapidHit, "連擊偵測區域")
+        CreateResizableOverlay("Left", leftBtn, GetText("left_button"))
+        CreateResizableOverlay("Right", rightBtn, GetText("right_button")) 
+        CreateResizableOverlay("Rapid", rapidHit, GetText("rapid_hit"))
     }
     
-    ShowTooltip("🔄 座標已恢復為預設值 (1920×1080)`n💾 設定已儲存", 3000)
+    ShowTooltip(GetText("tooltip_restore"), 3000)
 }
 
 ; === 建立主GUI介面 ===
 CreateMainGUI() {
-    global mainGui, colorVariation, variationSlider, variationText, statusBar
+    global mainGui, colorVariation, variationSlider, variationText, statusBar, languageDropdown
+    
+    ; 先載入語言包
+    LoadLanguage(currentLanguage)
     
     ; 建立主視窗
-    mainGui := Gui("+Resize -MaximizeBox", "棕色塵埃2 音遊手殘救星 v2.0")
+    mainGui := Gui("+Resize -MaximizeBox", GetText("title") . " " . GetText("version"))
     mainGui.OnEvent("Close", (*) => SafeExit())
     mainGui.OnEvent("Size", GuiResizeHandler)
     
@@ -193,39 +323,58 @@ CreateMainGUI() {
     mainGui.SetFont("s10", "Microsoft JhengHei")
     
     ; === 標題區域 ===
-    titleText := mainGui.Add("Text", "x20 y15 w460 Center cNavy", "🎮 棕色塵埃2 屁股達人 🎮")
+    titleText := mainGui.Add("Text", "x20 y15 w460 Center cNavy", "🎮 " . GetText("title") . " 🎮")
     titleText.SetFont("s12 Bold")
     
+    ; === 語言選擇 ===
+    mainGui.Add("GroupBox", "x20 y45 w460 h40", GetText("language"))
+    languageDropdown := mainGui.Add("DropDownList", "x30 y60 w150 Choose" . (currentLanguage = "zh-TW" ? "1" : "2"), ["zh-TW|繁體中文", "en-US|English"])
+    languageDropdown.OnEvent("Change", LanguageChangeHandler)
+    
     ; === 系統需求說明 ===
-    mainGui.Add("GroupBox", "x20 y45 w460 h90", "系統需求")
-    mainGui.Add("Text", "x30 y65 cBlue", "• 解析度: 1920×1080 全螢幕模式")
-    mainGui.Add("Text", "x30 y85 cBlue", "• 遊戲難度: Normal 難度 × 1倍速")
-    mainGui.Add("Text", "x30 y105 cBlue", "• 權限: 管理員權限 (已獲取)")
+    mainGui.Add("GroupBox", "x20 y95 w460 h90", GetText("system_requirements"))
+    mainGui.Add("Text", "x30 y115 cBlue", "• " . GetText("resolution"))
+    mainGui.Add("Text", "x30 y135 cBlue", "• " . GetText("difficulty"))
+    mainGui.Add("Text", "x30 y155 cBlue", "• " . GetText("permissions"))
     
     ; === 控制說明區域 ===
-    mainGui.Add("GroupBox", "x20 y145 w460 h150", "操作說明")
-    mainGui.Add("Text", "x30 y165 cGreen", "F1 鍵: 恢復預設座標 (1920×1080)")
-    mainGui.Add("Text", "x30 y185 cGreen", "F3 鍵: 顯示/隱藏偵測範圍紅框(可自訂調整)")
-    mainGui.Add("Text", "x30 y205 cGreen", "F4 鍵: 開啟/關閉自動化功能") 
-    mainGui.Add("Text", "x30 y225 cGreen", "F12 鍵: 安全退出腳本程式")
-    mainGui.Add("Text", "x30 y245 cRed", "⚠️ 請先按F3確認偵測範圍正確")
-    mainGui.Add("Text", "x30 y265 cPurple", "🔧 拖拽: 點擊中央移動 | 點擊角落調整大小")
+    mainGui.Add("GroupBox", "x20 y195 w460 h150", GetText("controls"))
+    mainGui.Add("Text", "x30 y215 cGreen", GetText("f1_help"))
+    mainGui.Add("Text", "x30 y235 cGreen", GetText("f3_help"))
+    mainGui.Add("Text", "x30 y255 cGreen", GetText("f4_help")) 
+    mainGui.Add("Text", "x30 y275 cGreen", GetText("f12_help"))
+    mainGui.Add("Text", "x30 y295 cRed", GetText("warning"))
+    mainGui.Add("Text", "x30 y315 cPurple", GetText("drag_help"))
     
     ; === 參數調整區域 ===
-    mainGui.Add("GroupBox", "x20 y305 w460 h80", "參數調整")
-    mainGui.Add("Text", "x30 y325 w120", "顏色容錯率:")
-    variationSlider := mainGui.Add("Slider", "x150 y325 w200 h30 Range1-50 ToolTip", colorVariation)
-    variationText := mainGui.Add("Text", "x360 y325 w60 Center Border", colorVariation)
-    mainGui.Add("Text", "x30 y355 cGray", "數值越高越容易觸發 (建議: 10-25)")
+    mainGui.Add("GroupBox", "x20 y355 w460 h80", GetText("parameters"))
+    mainGui.Add("Text", "x30 y375 w120", GetText("color_tolerance"))
+    variationSlider := mainGui.Add("Slider", "x150 y375 w200 h30 Range1-50 ToolTip", colorVariation)
+    variationText := mainGui.Add("Text", "x360 y375 w60 Center Border", colorVariation)
+    mainGui.Add("Text", "x30 y405 cGray", GetText("tolerance_hint"))
     
     ; 設定滑桿事件處理
     variationSlider.OnEvent("Change", UpdateVariation)
     
     ; === 狀態顯示區域 ===  
-    statusBar := mainGui.Add("StatusBar", "", "狀態: 就緒 | 顏色容錯率: " . colorVariation . " | 版本: v2.0 製作 by 考你媽台清交(Sid)")
+    statusBar := mainGui.Add("StatusBar", "", GetText("status_text") . ": " . GetText("status_ready") . " | " . GetText("color_tolerance") . ": " . colorVariation . " | " . GetText("version") . " 製作 by 考你媽台清交(Sid)")
     
     ; 顯示主視窗
-    mainGui.Show("w500 h420")
+    mainGui.Show("w500 h470")
+}
+
+; === 語言切換處理函數 ===
+LanguageChangeHandler(*) {
+    global languageDropdown
+    
+    ; 獲取選擇的語言代碼
+    selectedLang := languageDropdown.Text
+    
+    ; 提取語言代碼（格式：zh-TW|繁體中文）
+    langCode := StrSplit(selectedLang, "|")[1]
+    
+    ; 切換語言
+    SwitchLanguage(langCode)
 }
 
 ; === GUI視窗大小調整處理 ===
@@ -260,15 +409,15 @@ ToggleOverlay() {
     showOverlay := !showOverlay
     
     if (showOverlay) {
-        CreateResizableOverlay("Left", leftBtn, "左側按鈕區域")
-        CreateResizableOverlay("Right", rightBtn, "右側按鈕區域") 
-        CreateResizableOverlay("Rapid", rapidHit, "連擊偵測區域")
+        CreateResizableOverlay("Left", leftBtn, GetText("left_button"))
+        CreateResizableOverlay("Right", rightBtn, GetText("right_button")) 
+        CreateResizableOverlay("Rapid", rapidHit, GetText("rapid_hit"))
         
-        ShowTooltip("✅ 可調整大小紅框已顯示`n🖱️ 點擊中央拖拽移動位置`n📐 點擊角落調整範圍大小`n💾 所有變更自動儲存", 5000)
+        ShowTooltip(GetText("tooltip_overlay_show"), 5000)
     } else {
         DestroyAllOverlays()
         SaveSettings()  ; 隱藏時儲存設定
-        ShowTooltip("❌ 紅框已隱藏`n💾 設定已儲存至 INI 檔案", 2000)
+        ShowTooltip(GetText("tooltip_overlay_hide"), 2000)
     }
 }
 
@@ -449,8 +598,8 @@ StartDragOperation(overlayData, mode) {
         WinSetTransparent(150, overlayData.gui.Hwnd)
     }
     
-    modeText := (mode = "move") ? "移動位置" : "調整大小"
-    ShowTooltip("🔄 " . modeText . ": " . overlayData.description . "`n" . ((mode = "move") ? "拖拽到目標位置" : "拖拽調整範圍大小") . "`n點擊任意處結束", 2000)
+    modeText := (mode = "move") ? GetText("tooltip_move") : GetText("tooltip_resize")
+    ShowTooltip(StrReplace(modeText, "{desc}", overlayData.description), 2000)
     
     ; 註冊更新循環和結束事件
     SetTimer(DragUpdateLoop, 33)  ; 約30FPS，減少抖動
@@ -636,8 +785,8 @@ EndDrag(*) {
         ; 恢復透明度
         WinSetTransparent(200, currentDragOverlay.gui.Hwnd)
         
-        modeText := (dragMode = "move") ? "位置" : "大小"
-        ShowTooltip("✅ " . currentDragOverlay.description . " " . modeText . "已更新`n💾 設定已儲存", 2000)
+        modeText := (dragMode = "move") ? GetText("tooltip_position_updated") : GetText("tooltip_size_updated")
+        ShowTooltip(StrReplace(modeText, "{desc}", currentDragOverlay.description), 2000)
     }
     
     ; 清除拖拽狀態
@@ -849,7 +998,7 @@ ToggleAutomation() {
     UpdateVariation()
     
     if (loopRunning) {
-        ShowTooltip("🚀 自動化已啟動！`n開始監控遊戲畫面", 2000)
+        ShowTooltip(GetText("tooltip_automation_start"), 2000)
         
         ; 避免重複啟動多個循環實例
         if (!loopActive) {
@@ -905,7 +1054,7 @@ SafeExit() {
         SetTimer(StartMainLoop, 0)
         
         ; 友好的退出提示
-        ShowTooltip("👋 祝我身體健康、運氣爆棚!`n💾 所有設定已儲存", 2000)
+        ShowTooltip(GetText("tooltip_exit"), 2000)
         
         ; 延遲退出以顯示提示
         SetTimer(() => ExitApp(), -2500)
