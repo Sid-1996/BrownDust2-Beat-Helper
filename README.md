@@ -1,6 +1,6 @@
 # BrownDust2 Beat Helper
 
-**[繁體中文](#-繁體中文) | [English](#-english)**
+**[繁體中文](#-繁體中文) | [English](#english)**
 
 ---
 
@@ -106,7 +106,7 @@ Perfect for hitting perfect beats without finger fatigue.
 
 ## 📜 License
 
-This project is licensed under **CC BY-NC 4.0**: Free to share and modify, but must attribute source and cannot be used commercially.  
+This project is licensed under **MIT License**: Free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the software.  
 See [`LICENSE`](LICENSE) file for details.
 
 ---

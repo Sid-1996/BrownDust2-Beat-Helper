@@ -1,12 +1,52 @@
-# BrownDust2 Beat Helper 忽略規則
+# AutoHotkey compiled executables
+*.exe
+*.ahk
 
-# 設定檔
+# Configuration files with sensitive data
 *.ini
+config.ini
+settings.ini
 
-# 暫存檔
-*.log
+# Language files (keep only source)
+lang/*.json
+
+# Temporary files
 *.tmp
+*.temp
+*.log
 
-# 系統檔案
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Windows files
 Thumbs.db
+Desktop.ini
+
+# macOS files
 .DS_Store
+
+# Linux files
+*~
+
+# Build artifacts
+build/
+dist/
+out/
+
+# Node modules (if any)
+node_modules/
+
+# Package files
+*.zip
+*.rar
+*.7z
+
+# Documentation build
+docs/_build/
+
+# Backup files
+*.bak
+*.backup
