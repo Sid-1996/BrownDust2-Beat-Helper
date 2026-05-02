@@ -1,0 +1,52 @@
+# AutoHotkey compiled executables
+*.exe
+*.ahk
+
+# Configuration files with sensitive data
+*.ini
+config.ini
+settings.ini
+
+# Language files (keep only source)
+lang/*.json
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Windows files
+Thumbs.db
+Desktop.ini
+
+# macOS files
+.DS_Store
+
+# Linux files
+*~
+
+# Build artifacts
+build/
+dist/
+out/
+
+# Node modules (if any)
+node_modules/
+
+# Package files
+*.zip
+*.rar
+*.7z
+
+# Documentation build
+docs/_build/
+
+# Backup files
+*.bak
+*.backup
