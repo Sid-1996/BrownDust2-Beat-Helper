@@ -1,11 +1,11 @@
-# AutoHotkey compiled executables
-*.exe
-*.ahk
+# AutoHotkey compiled executables (exclude temporary builds)
+*_temp.exe
+*_debug.exe
 
-# Configuration files with sensitive data
-*.ini
+# Configuration files with sensitive data (exclude only sensitive ones)
 config.ini
 settings.ini
+credentials.ini
 
 # Language files (keep only source)
 lang/*.json
@@ -39,8 +39,9 @@ out/
 # Node modules (if any)
 node_modules/
 
-# Package files
-*.zip
+# Package files (exclude only compressed archives except main distribution)
+*_backup.zip
+*_temp.zip
 *.rar
 *.7z
 
