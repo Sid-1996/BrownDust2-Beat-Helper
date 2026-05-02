@@ -39,6 +39,20 @@ global currentDragOverlay := ""
 global dragMode := ""  ; "move" 或 "resize"
 global resizeCorner := ""  ; "tl", "tr", "bl", "br"
 
+; 平滑拖拽相關變數
+global lastSmoothX := 0
+global lastSmoothY := 0
+global targetX := 0
+global targetY := 0
+global smoothingFactor := 0.3  ; 平滑係數 (0.1-0.5, 越小越平滑)
+
+; 調整大小平滑變數
+global lastSmoothWidth := 0
+global lastSmoothHeight := 0
+global targetWidth := 0
+global targetHeight := 0
+global resizeSmoothingFactor := 0.2  ; 調整大小平滑係數
+
 ; 預設遊戲區域座標定義 (1920x1080解析度)
 global defaultCoords := {
     leftBtn: {x1: 122, y1: 733, x2: 322, y2: 871},
@@ -395,11 +409,29 @@ HandleOverlayResize(overlayData, corner) {
 ; === 開始拖拽操作 ===
 StartDragOperation(overlayData, mode) {
     global isDraggingAny, currentDragOverlay, dragMode
+    global lastSmoothX, lastSmoothY, targetX, targetY
+    global lastSmoothWidth, lastSmoothHeight, targetWidth, targetHeight
     
     isDraggingAny := true
     currentDragOverlay := overlayData
     dragMode := mode
     overlayData.isDragging := true
+    
+    ; 重置平滑拖拽變數
+    lastSmoothX := 0
+    lastSmoothY := 0
+    targetX := 0
+    targetY := 0
+    lastSmoothWidth := 0
+    lastSmoothHeight := 0
+    targetWidth := 0
+    targetHeight := 0
+    
+    ; 重置overlay的平滑位置變數
+    if (HasProp(overlayData, "lastSmoothPosX")) {
+        overlayData.DeleteProp("lastSmoothPosX")
+        overlayData.DeleteProp("lastSmoothPosY")
+    }
     
     ; 記錄起始位置
     MouseGetPos(&mouseX, &mouseY)
@@ -421,14 +453,15 @@ StartDragOperation(overlayData, mode) {
     ShowTooltip("🔄 " . modeText . ": " . overlayData.description . "`n" . ((mode = "move") ? "拖拽到目標位置" : "拖拽調整範圍大小") . "`n點擊任意處結束", 2000)
     
     ; 註冊更新循環和結束事件
-    SetTimer(DragUpdateLoop, 16)  ; 約60FPS
+    SetTimer(DragUpdateLoop, 33)  ; 約30FPS，減少抖動
     Hotkey("~LButton", EndDrag, "On")
     Hotkey("~RButton", EndDrag, "On")
 }
 
-; === 拖拽更新循環 ===
+; === 拖拽更新循環 (平滑版本) ===
 DragUpdateLoop() {
     global isDraggingAny, currentDragOverlay, dragMode, resizeCorner
+    global lastSmoothX, lastSmoothY, targetX, targetY, smoothingFactor
     
     if (!isDraggingAny || !currentDragOverlay || !currentDragOverlay.isDragging) {
         SetTimer(DragUpdateLoop, 0)
@@ -438,72 +471,132 @@ DragUpdateLoop() {
     MouseGetPos(&currentMouseX, &currentMouseY)
     
     if (dragMode = "move") {
-        ; 移動模式
+        ; 移動模式 - 使用平滑插值
         offsetX := currentMouseX - currentDragOverlay.startMouseX
         offsetY := currentMouseY - currentDragOverlay.startMouseY
         
-        newX := currentDragOverlay.startWinX + offsetX
-        newY := currentDragOverlay.startWinY + offsetY
+        ; 計算目標位置
+        targetX := currentDragOverlay.startWinX + offsetX
+        targetY := currentDragOverlay.startWinY + offsetY
         
         ; 邊界檢查
-        newX := Max(0, Min(newX, A_ScreenWidth - currentDragOverlay.originalWidth))
-        newY := Max(0, Min(newY, A_ScreenHeight - currentDragOverlay.originalHeight))
+        targetX := Max(0, Min(targetX, A_ScreenWidth - currentDragOverlay.originalWidth))
+        targetY := Max(0, Min(targetY, A_ScreenHeight - currentDragOverlay.originalHeight))
         
-        try {
-            currentDragOverlay.gui.Move(newX, newY)
-        } catch {
-            EndDrag()
+        ; 初始化平滑位置
+        if (lastSmoothX = 0 && lastSmoothY = 0) {
+            lastSmoothX := targetX
+            lastSmoothY := targetY
+        }
+        
+        ; 平滑插值計算
+        smoothX := lastSmoothX + (targetX - lastSmoothX) * smoothingFactor
+        smoothY := lastSmoothY + (targetY - lastSmoothY) * smoothingFactor
+        
+        ; 只有當移動距離超過1像素時才更新，避免微小抖動
+        if (Abs(smoothX - lastSmoothX) > 0.5 || Abs(smoothY - lastSmoothY) > 0.5) {
+            try {
+                currentDragOverlay.gui.Move(Round(smoothX), Round(smoothY))
+                lastSmoothX := smoothX
+                lastSmoothY := smoothY
+            } catch {
+                EndDrag()
+            }
         }
         
     } else if (dragMode = "resize") {
-        ; 調整大小模式
+        ; 調整大小模式 - 使用平滑插值
+        global lastSmoothWidth, lastSmoothHeight, targetWidth, targetHeight, resizeSmoothingFactor
+        
         offsetX := currentMouseX - currentDragOverlay.startMouseX
         offsetY := currentMouseY - currentDragOverlay.startMouseY
         
-        newX := currentDragOverlay.startWinX
-        newY := currentDragOverlay.startWinY
-        newWidth := currentDragOverlay.originalWidth
-        newHeight := currentDragOverlay.originalHeight
+        ; 計算目標座標和大小
+        targetNewX := currentDragOverlay.startWinX
+        targetNewY := currentDragOverlay.startWinY
+        targetWidth := currentDragOverlay.originalWidth
+        targetHeight := currentDragOverlay.originalHeight
         
         ; 根據角落調整座標和大小
         switch resizeCorner {
             case "tl":  ; 左上角
-                newX := currentDragOverlay.startWinX + offsetX
-                newY := currentDragOverlay.startWinY + offsetY
-                newWidth := currentDragOverlay.originalWidth - offsetX
-                newHeight := currentDragOverlay.originalHeight - offsetY
+                targetNewX := currentDragOverlay.startWinX + offsetX
+                targetNewY := currentDragOverlay.startWinY + offsetY
+                targetWidth := currentDragOverlay.originalWidth - offsetX
+                targetHeight := currentDragOverlay.originalHeight - offsetY
                 
             case "tr":  ; 右上角
-                newY := currentDragOverlay.startWinY + offsetY
-                newWidth := currentDragOverlay.originalWidth + offsetX
-                newHeight := currentDragOverlay.originalHeight - offsetY
+                targetNewX := currentDragOverlay.startWinX  ; X位置保持不變
+                targetNewY := currentDragOverlay.startWinY + offsetY
+                targetWidth := currentDragOverlay.originalWidth + offsetX
+                targetHeight := currentDragOverlay.originalHeight - offsetY
                 
             case "bl":  ; 左下角
-                newX := currentDragOverlay.startWinX + offsetX
-                newWidth := currentDragOverlay.originalWidth - offsetX
-                newHeight := currentDragOverlay.originalHeight + offsetY
+                targetNewX := currentDragOverlay.startWinX + offsetX
+                targetNewY := currentDragOverlay.startWinY  ; Y位置保持不變
+                targetWidth := currentDragOverlay.originalWidth - offsetX
+                targetHeight := currentDragOverlay.originalHeight + offsetY
                 
             case "br":  ; 右下角
-                newWidth := currentDragOverlay.originalWidth + offsetX
-                newHeight := currentDragOverlay.originalHeight + offsetY
+                targetNewX := currentDragOverlay.startWinX  ; X位置保持不變
+                targetNewY := currentDragOverlay.startWinY  ; Y位置保持不變
+                targetWidth := currentDragOverlay.originalWidth + offsetX
+                targetHeight := currentDragOverlay.originalHeight + offsetY
         }
         
         ; 最小尺寸限制
         minWidth := 50
         minHeight := 30
-        newWidth := Max(minWidth, newWidth)
-        newHeight := Max(minHeight, newHeight)
+        targetWidth := Max(minWidth, targetWidth)
+        targetHeight := Max(minHeight, targetHeight)
         
         ; 邊界檢查
-        newX := Max(0, Min(newX, A_ScreenWidth - newWidth))
-        newY := Max(0, Min(newY, A_ScreenHeight - newHeight))
+        targetNewX := Max(0, Min(targetNewX, A_ScreenWidth - targetWidth))
+        targetNewY := Max(0, Min(targetNewY, A_ScreenHeight - targetHeight))
         
-        try {
-            currentDragOverlay.gui.Move(newX, newY, newWidth, newHeight)
-            currentDragOverlay.width := newWidth
-            currentDragOverlay.height := newHeight
-        } catch {
-            EndDrag()
+        ; 初始化平滑大小
+        if (lastSmoothWidth = 0 && lastSmoothHeight = 0) {
+            lastSmoothWidth := targetWidth
+            lastSmoothHeight := targetHeight
+        }
+        
+        ; 平滑插值計算
+        smoothWidth := lastSmoothWidth + (targetWidth - lastSmoothWidth) * resizeSmoothingFactor
+        smoothHeight := lastSmoothHeight + (targetHeight - lastSmoothHeight) * resizeSmoothingFactor
+        
+        ; 對於位置也需要平滑插值（除了左上角）
+        if (resizeCorner != "tl") {
+            ; 初始化平滑位置
+            if (!HasProp(currentDragOverlay, "lastSmoothPosX")) {
+                currentDragOverlay.lastSmoothPosX := targetNewX
+                currentDragOverlay.lastSmoothPosY := targetNewY
+            }
+            
+            smoothPosX := currentDragOverlay.lastSmoothPosX + (targetNewX - currentDragOverlay.lastSmoothPosX) * resizeSmoothingFactor
+            smoothPosY := currentDragOverlay.lastSmoothPosY + (targetNewY - currentDragOverlay.lastSmoothPosY) * resizeSmoothingFactor
+            
+            currentDragOverlay.lastSmoothPosX := smoothPosX
+            currentDragOverlay.lastSmoothPosY := smoothPosY
+            
+            finalX := Round(smoothPosX)
+            finalY := Round(smoothPosY)
+        } else {
+            ; 左上角直接使用目標位置
+            finalX := targetNewX
+            finalY := targetNewY
+        }
+        
+        ; 只有當變化超過1像素時才更新，避免微小抖動
+        if (Abs(smoothWidth - lastSmoothWidth) > 0.5 || Abs(smoothHeight - lastSmoothHeight) > 0.5) {
+            try {
+                currentDragOverlay.gui.Move(finalX, finalY, Round(smoothWidth), Round(smoothHeight))
+                currentDragOverlay.width := smoothWidth
+                currentDragOverlay.height := smoothHeight
+                lastSmoothWidth := smoothWidth
+                lastSmoothHeight := smoothHeight
+            } catch {
+                EndDrag()
+            }
         }
     }
 }
@@ -511,6 +604,8 @@ DragUpdateLoop() {
 ; === 結束拖拽 ===
 EndDrag(*) {
     global isDraggingAny, currentDragOverlay, dragMode
+    global lastSmoothX, lastSmoothY, targetX, targetY
+    global lastSmoothWidth, lastSmoothHeight, targetWidth, targetHeight
     
     if (!isDraggingAny || !currentDragOverlay) {
         return
@@ -524,9 +619,12 @@ EndDrag(*) {
         currentDragOverlay.gui.GetPos(&finalX, &finalY, &finalW, &finalH)
         
         if (dragMode = "resize") {
-            ; 調整大小時需要重新建立GUI以更新內部控制項
+            ; 更新偵測區域座標，但不重建overlay以避免延遲
             UpdateDetectionAreaWithSize(currentDragOverlay, finalX, finalY, finalW, finalH)
-            RebuildOverlay(currentDragOverlay, finalX, finalY, finalW, finalH)
+            
+            ; 直接更新overlay的內部控制項位置和大小
+            ; 傳遞正確的當前位置和大小
+            UpdateOverlayControls(currentDragOverlay, finalW, finalH)
         } else {
             ; 只是移動位置
             UpdateDetectionArea(currentDragOverlay, finalX, finalY)
@@ -548,10 +646,80 @@ EndDrag(*) {
     currentDragOverlay := ""
     dragMode := ""
     
+    ; 重置平滑拖拽變數
+    lastSmoothX := 0
+    lastSmoothY := 0
+    targetX := 0
+    targetY := 0
+    lastSmoothWidth := 0
+    lastSmoothHeight := 0
+    targetWidth := 0
+    targetHeight := 0
+    
     ; 移除熱鍵
     try {
         Hotkey("~LButton", EndDrag, "Off")
         Hotkey("~RButton", EndDrag, "Off")
+    }
+}
+
+; === 更新Overlay控制項 (調整大小後) ===
+UpdateOverlayControls(overlayData, newWidth, newHeight) {
+    ; 更新overlay數據中的尺寸
+    overlayData.width := newWidth
+    overlayData.height := newHeight
+    overlayData.originalWidth := newWidth
+    overlayData.originalHeight := newHeight
+    
+    ; 更新拖拽區域大小
+    centerMargin := 15
+    try {
+        ; 獲取GUI中的所有控制項並更新大小
+        gui := overlayData.gui
+        
+        ; 更新邊框控制項
+        borderWidth := 3
+        cornerSize := 15
+        
+        ; 邊框 - 重新定位和調整大小
+        ControlMove("Progress1", 0, 0, newWidth, borderWidth, gui.Hwnd)  ; 上邊框
+        ControlMove("Progress2", 0, newHeight-borderWidth, newWidth, borderWidth, gui.Hwnd)  ; 下邊框
+        ControlMove("Progress3", 0, 0, borderWidth, newHeight, gui.Hwnd)  ; 左邊框
+        ControlMove("Progress4", newWidth-borderWidth, 0, borderWidth, newHeight, gui.Hwnd)  ; 右邊框
+        
+        ; 角落指示器 - 重新定位
+        ControlMove("Progress5", 0, 0, cornerSize, cornerSize, gui.Hwnd)  ; 左上
+        ControlMove("Progress6", newWidth-cornerSize, 0, cornerSize, cornerSize, gui.Hwnd)  ; 右上
+        ControlMove("Progress7", 0, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)  ; 左下
+        ControlMove("Progress8", newWidth-cornerSize, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)  ; 右下
+        
+        ; 角落文字符號 - 重新定位
+        ControlMove("Static1", 2, 2, 11, 11, gui.Hwnd)  ; 左上
+        ControlMove("Static2", newWidth-13, 2, 11, 11, gui.Hwnd)  ; 右上
+        ControlMove("Static3", 2, newHeight-13, 11, 11, gui.Hwnd)  ; 左下
+        ControlMove("Static4", newWidth-13, newHeight-13, 11, 11, gui.Hwnd)  ; 右下
+        
+        ; 更新中央拖拽區域
+        ControlMove("Static5", centerMargin, centerMargin, newWidth-centerMargin*2, newHeight-centerMargin*2, gui.Hwnd)
+        
+        ; 如果有說明文字，更新其位置
+        if (overlayData.description != "") {
+            textX := Max(5, (newWidth - StrLen(overlayData.description) * 7) / 2)
+            textY := Max(5, newHeight / 2 - 8)
+            ControlMove("Static6", textX, textY, 150, 20, gui.Hwnd)
+        }
+    } catch as err {
+        ; 如果控制項更新失敗，回退到重建方法
+        ; 獲取當前位置並正確傳遞
+        try {
+            currentX := 0
+            currentY := 0
+            overlayData.gui.GetPos(&currentX, &currentY)
+            RebuildOverlay(overlayData, currentX, currentY, newWidth, newHeight)
+        } catch {
+            ; 如果連位置都獲取不到，使用原始位置
+            RebuildOverlay(overlayData, overlayData.startWinX, overlayData.startWinY, newWidth, newHeight)
+        }
     }
 }
 
