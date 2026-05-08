@@ -43,7 +43,23 @@ AutoHotkey v2 工具，專為 **棕色塵埃2** 音樂小遊戲自動化設計�
 4. 調整偵測框位置與大小，點擊啟動
 5. 開始音樂小遊戲，享受穩定輸出
 
-### 📥 下載與使用
+### � F3 偵測框位置示範
+按 F3 顯示偵測框後，可拖拽調整位置。以下是建議的偵測框位置配置：
+
+![F3 Position Demo](image.png)
+
+**偵測框說明：**
+- 🔵 **左側按鈕框** - 對準遊戲左側按鈕區域
+- 🔴 **右側按鈕框** - 對準遊戲右側按鈕區域  
+- ⚫ **連擊區域框** - 對準遊戲底部連擊判定區域
+
+**調整技巧：**
+- 拖拽紅框中央移動位置
+- 拖拽四個黃色角落調整大小
+- 按住滑鼠左鍵進行拖拽操作
+- 設定會自動儲存到 `Brown_Dust2_Settings.ini`
+
+### � 下載與使用
 - 直接下載並執行：  
   [點此下載最新 EXE](./BD2屁股達人音遊腳本.exe)  
 - 或查看原始碼：  
@@ -92,6 +108,22 @@ Perfect for hitting perfect beats without finger fatigue.
 3. Run `BrownDust2 Beat Helper.ahk` (recommended as administrator)
 4. Adjust detection box position and size, then click to start
 5. Begin the music mini-game and enjoy stable performance
+
+### 📐 F3 Detection Box Position Demo
+Press F3 to display detection boxes, then drag to adjust positions. Here's the recommended detection box configuration:
+
+![F3 Position Demo](image.png)
+
+**Detection Box Guide:**
+- 🔵 **Left Button Box** - Align with game left button area
+- 🔴 **Right Button Box** - Align with game right button area  
+- ⚫ **Rapid Hit Box** - Align with game bottom rapid hit detection area
+
+**Adjustment Tips:**
+- Drag the center of red boxes to move position
+- Drag the four yellow corners to resize
+- Hold left mouse button to perform drag operations
+- Settings are automatically saved to `Brown_Dust2_Settings.ini`
 
 ### 📥 Download & Usage
 - Direct download and run:  

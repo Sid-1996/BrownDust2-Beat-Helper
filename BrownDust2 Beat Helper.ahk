@@ -461,8 +461,14 @@ CreateResizableOverlay(name, area, description := "") {
     }
     
     ; 建立拖拽區域 (中央區域用於移動)
-    centerMargin := 15
-    dragArea := overlayGui.Add("Text", "x" . centerMargin . " y" . centerMargin . " w" . (width - centerMargin*2) . " h" . (height - centerMargin*2) . " BackgroundTrans")
+    ; 使用動態邊距以確保拖拽區域始終具有最小尺寸
+    minDragSize := 20
+    centerMarginX := Min(15, Max(0, (width - minDragSize) / 2))
+    centerMarginY := Min(15, Max(0, (height - minDragSize) / 2))
+    dragWidth := Max(minDragSize, width - centerMarginX * 2)
+    dragHeight := Max(minDragSize, height - centerMarginY * 2)
+    
+    dragArea := overlayGui.Add("Text", "x" . centerMarginX . " y" . centerMarginY . " w" . dragWidth . " h" . dragHeight . " BackgroundTrans")
     dragArea.OnEvent("Click", (*)=> HandleOverlayMove(overlayData))
     
     ; 建立四個角落的調整大小控制點
@@ -848,8 +854,13 @@ UpdateOverlayControls(overlayData, newWidth, newHeight) {
         ControlMove("Static3", 2, newHeight-13, 11, 11, gui.Hwnd)  ; 左下
         ControlMove("Static4", newWidth-13, newHeight-13, 11, 11, gui.Hwnd)  ; 右下
         
-        ; 更新中央拖拽區域
-        ControlMove("Static5", centerMargin, centerMargin, newWidth-centerMargin*2, newHeight-centerMargin*2, gui.Hwnd)
+        ; 更新中央拖拽區域 - 使用相同的動態邊距計算
+        minDragSize := 20
+        centerMarginX := Min(15, Max(0, (newWidth - minDragSize) / 2))
+        centerMarginY := Min(15, Max(0, (newHeight - minDragSize) / 2))
+        dragWidth := Max(minDragSize, newWidth - centerMarginX * 2)
+        dragHeight := Max(minDragSize, newHeight - centerMarginY * 2)
+        ControlMove("Static5", centerMarginX, centerMarginY, dragWidth, dragHeight, gui.Hwnd)
         
         ; 如果有說明文字，更新其位置
         if (overlayData.description != "") {
