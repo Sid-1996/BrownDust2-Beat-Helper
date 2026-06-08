@@ -151,7 +151,7 @@ SaveSettings() {
         
     } catch {
         ; 儲存失敗處理
-        ShowTooltip("⚠️ 設定檔儲存失敗", 2000)
+        ShowTooltip(GetText("tooltip_settings_save_fail"), 2000)
     }
 }
 
@@ -159,51 +159,21 @@ SaveSettings() {
 LoadLanguage(langCode) {
     global languageData, langDir, currentLanguage
     
-    try {
+    langFile := langDir . "\" . langCode . ".ini"
+    
+    if !FileExist(langFile) {
+        langCode := "zh-TW"
         langFile := langDir . "\" . langCode . ".ini"
-        
-        ; 檢查語言檔案是否存在
-        if !FileExist(langFile) {
-            ; 如果不存在，回退到預設語言
-            langCode := "zh-TW"
-            langFile := langDir . "\" . langCode . ".ini"
-        }
-        
-        ; 使用INI格式讀取語言包
-        languageData := Map()
-        
-        ; 讀取所有section
-        sections := []
-        try {
-            sectionNames := []
-            IniRead(sectionNames, langFile)
-            
-            for section in sectionNames {
-                keys := []
-                IniRead(keys, langFile, section)
-                for key in keys {
-                    value := IniRead(langFile, section, key)
-                    languageData[key] := value
-                }
-            }
-        } catch {
-            ; 如果沒有section，直接讀取key-value對
-            languageData := LoadLanguageFromINI(langFile)
-        }
-        
-        currentLanguage := langCode
-        return true
-    } catch as err {
-        ; 載入失敗時回退到預設語言
-        try {
-            langFile := langDir . "\zh-TW.ini"
-            languageData := LoadLanguageFromINI(langFile)
-            currentLanguage := "zh-TW"
-            return true
-        } catch {
-            return false
-        }
     }
+    
+    languageData := LoadLanguageFromINI(langFile)
+    
+    if (languageData.Count = 0) {
+        return false
+    }
+    
+    currentLanguage := langCode
+    return true
 }
 
 ; === 從INI檔案載入語言數據 ===
@@ -211,31 +181,24 @@ LoadLanguageFromINI(langFile) {
     result := Map()
     
     try {
-        ; 讀取檔案內容
         fileContent := FileRead(langFile, "UTF-8")
+        lines := StrSplit(fileContent, "`n", "`r")
         
-        ; 解析INI格式
-        lines := StrSplit(fileContent, "`n")
         for line in lines {
-            line := StrReplace(line, "`r", "")
-            line := StrReplace(line, " ", "")
+            trimmed := Trim(line)
             
-            ; 跳過註釋和空行
-            if (line = "" || SubStr(line, 1, 1) = ";" || SubStr(line, 1, 1) = "#")
+            if (trimmed = "" || SubStr(trimmed, 1, 1) = ";" || SubStr(trimmed, 1, 1) = "#")
                 continue
             
-            ; 解析key=value
-            if (InStr(line, "=")) {
-                parts := StrSplit(line, "=")
-                if (parts.Length >= 2) {
-                    key := parts[1]
-                    value := parts[2]
-                    result[key] := value
-                }
+            pos := InStr(trimmed, "=")
+            if (pos) {
+                key := SubStr(trimmed, 1, pos - 1)
+                value := SubStr(trimmed, pos + 1)
+                value := StrReplace(value, "``n", "`n")
+                result[Trim(key)] := value
             }
         }
     } catch {
-        ; 如果讀取失敗，返回空Map
     }
     
     return result
@@ -266,7 +229,7 @@ SwitchLanguage(langCode) {
         ShowTooltip("✅ " . GetText("settings_saved"), 1500)
     } else {
         ; 語言載入失敗
-        ShowTooltip("❌ Language load failed", 2000)
+        ShowTooltip(GetText("tooltip_language_load_fail"), 2000)
     }
 }
 
@@ -396,7 +359,7 @@ UpdateVariation(*) {
     SaveSettings()
     
     ; 更新狀態列資訊
-    statusText := "狀態: " . (loopRunning ? "🟢 運行中" : "🔴 停止中") . " | 顏色容錯率: " . colorVariation . " | 版本: v2.0 製作 by 考你媽台清交(Sid)"
+    statusText := GetText("status_text") . ": " . (loopRunning ? GetText("status_running") : GetText("status_stopped")) . " | " . GetText("color_tolerance") . ": " . colorVariation . " | " . GetText("version") . " 製作 by 考你媽台清交(Sid)"
     statusBar.Text := statusText
 }
 
@@ -745,8 +708,8 @@ DragUpdateLoop() {
         if (Abs(smoothWidth - lastSmoothWidth) > 0.5 || Abs(smoothHeight - lastSmoothHeight) > 0.5) {
             try {
                 currentDragOverlay.gui.Move(finalX, finalY, Round(smoothWidth), Round(smoothHeight))
-                currentDragOverlay.width := smoothWidth
-                currentDragOverlay.height := smoothHeight
+                currentDragOverlay.width := Round(smoothWidth)
+                currentDragOverlay.height := Round(smoothHeight)
                 lastSmoothWidth := smoothWidth
                 lastSmoothHeight := smoothHeight
             } catch {
@@ -829,44 +792,47 @@ UpdateOverlayControls(overlayData, newWidth, newHeight) {
     ; 更新拖拽區域大小
     centerMargin := 15
     try {
-        ; 獲取GUI中的所有控制項並更新大小
         gui := overlayData.gui
-        
-        ; 更新邊框控制項
         borderWidth := 3
         cornerSize := 15
         
-        ; 邊框 - 重新定位和調整大小
-        ControlMove("Progress1", 0, 0, newWidth, borderWidth, gui.Hwnd)  ; 上邊框
-        ControlMove("Progress2", 0, newHeight-borderWidth, newWidth, borderWidth, gui.Hwnd)  ; 下邊框
-        ControlMove("Progress3", 0, 0, borderWidth, newHeight, gui.Hwnd)  ; 左邊框
-        ControlMove("Progress4", newWidth-borderWidth, 0, borderWidth, newHeight, gui.Hwnd)  ; 右邊框
+        ; 邊框 Progress1-4
+        ControlMove("Progress1", 0, 0, newWidth, borderWidth, gui.Hwnd)
+        ControlMove("Progress2", 0, newHeight-borderWidth, newWidth, borderWidth, gui.Hwnd)
+        ControlMove("Progress3", 0, 0, borderWidth, newHeight, gui.Hwnd)
+        ControlMove("Progress4", newWidth-borderWidth, 0, borderWidth, newHeight, gui.Hwnd)
         
-        ; 角落指示器 - 重新定位
-        ControlMove("Progress5", 0, 0, cornerSize, cornerSize, gui.Hwnd)  ; 左上
-        ControlMove("Progress6", newWidth-cornerSize, 0, cornerSize, cornerSize, gui.Hwnd)  ; 右上
-        ControlMove("Progress7", 0, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)  ; 左下
-        ControlMove("Progress8", newWidth-cornerSize, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)  ; 右下
+        ; 角落指示器 Progress5-8
+        ControlMove("Progress5", 0, 0, cornerSize, cornerSize, gui.Hwnd)
+        ControlMove("Progress6", newWidth-cornerSize, 0, cornerSize, cornerSize, gui.Hwnd)
+        ControlMove("Progress7", 0, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)
+        ControlMove("Progress8", newWidth-cornerSize, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)
         
-        ; 角落文字符號 - 重新定位
-        ControlMove("Static1", 2, 2, 11, 11, gui.Hwnd)  ; 左上
-        ControlMove("Static2", newWidth-13, 2, 11, 11, gui.Hwnd)  ; 右上
-        ControlMove("Static3", 2, newHeight-13, 11, 11, gui.Hwnd)  ; 左下
-        ControlMove("Static4", newWidth-13, newHeight-13, 11, 11, gui.Hwnd)  ; 右下
+        ; 四角點擊區域 Static2-5 (tl/tr/bl/brCorner)
+        ControlMove("Static2", 0, 0, cornerSize, cornerSize, gui.Hwnd)
+        ControlMove("Static3", newWidth-cornerSize, 0, cornerSize, cornerSize, gui.Hwnd)
+        ControlMove("Static4", 0, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)
+        ControlMove("Static5", newWidth-cornerSize, newHeight-cornerSize, cornerSize, cornerSize, gui.Hwnd)
         
-        ; 更新中央拖拽區域 - 使用相同的動態邊距計算
+        ; 角落箭頭文字 Static6-9 (↖↗↙↘)
+        ControlMove("Static6", 2, 2, 11, 11, gui.Hwnd)
+        ControlMove("Static7", newWidth-13, 2, 11, 11, gui.Hwnd)
+        ControlMove("Static8", 2, newHeight-13, 11, 11, gui.Hwnd)
+        ControlMove("Static9", newWidth-13, newHeight-13, 11, 11, gui.Hwnd)
+        
+        ; 中央拖拽區域 Static1 (dragArea)
         minDragSize := 20
         centerMarginX := Min(15, Max(0, (newWidth - minDragSize) / 2))
         centerMarginY := Min(15, Max(0, (newHeight - minDragSize) / 2))
         dragWidth := Max(minDragSize, newWidth - centerMarginX * 2)
         dragHeight := Max(minDragSize, newHeight - centerMarginY * 2)
-        ControlMove("Static5", centerMarginX, centerMarginY, dragWidth, dragHeight, gui.Hwnd)
+        ControlMove("Static1", centerMarginX, centerMarginY, dragWidth, dragHeight, gui.Hwnd)
         
-        ; 如果有說明文字，更新其位置
+        ; 說明文字 Static10 (labelText)
         if (overlayData.description != "") {
             textX := Max(5, (newWidth - StrLen(overlayData.description) * 7) / 2)
             textY := Max(5, newHeight / 2 - 8)
-            ControlMove("Static6", textX, textY, 150, 20, gui.Hwnd)
+            ControlMove("Static10", textX, textY, 150, 20, gui.Hwnd)
         }
     } catch as err {
         ; 如果控制項更新失敗，回退到重建方法
@@ -1018,7 +984,7 @@ ToggleAutomation() {
             SetTimer(StartMainLoop, -50)
         }
     } else {
-        ShowTooltip("⏹️ 自動化已停止", 1500)
+        ShowTooltip(GetText("tooltip_automation_stop"), 1500)
         ; 確保所有按鍵都釋放
         ReleaseAllKeys()
     }
@@ -1028,6 +994,11 @@ ToggleAutomation() {
 F12::SafeExit()
 
 SafeExit() {
+    static exiting := false
+    if exiting
+        return
+    exiting := true
+    
     global overlayMap, mainGui, loopRunning, isDraggingAny
     
     try {
@@ -1140,12 +1111,10 @@ StartMainLoop() {
             }
             
         } catch as err {
-            ; 錯誤處理: 記錄到剪貼簿
-            errorMsg := "PixelSearch錯誤: " . err.Message . "`n時間: " . A_Now
+            errorMsg := A_Now . " | PixelSearch錯誤: " . err.Message
             try {
-                A_Clipboard := errorMsg
+                FileAppend(errorMsg . "`n", A_ScriptDir . "\error.log")
             }
-            ; 短暫暫停後繼續
             Sleep(100)
         }
         
@@ -1289,9 +1258,15 @@ ReleaseAllKeys() {
 ; === 顯示提示訊息 ===
 ShowTooltip(message, duration := 2000) {
     try {
+        CoordMode("ToolTip", "Screen")
         ToolTip(message, , , 1)
-        SetTimer(() => ToolTip(, , , 1), -duration)
+        SetTimer(_ClearTooltip, 0)
+        SetTimer(_ClearTooltip, -duration)
     }
+}
+
+_ClearTooltip() {
+    ToolTip(, , , 1)
 }
 
 ; === 託盤圖示事件處理函數 ===
@@ -1324,7 +1299,7 @@ try {
     CreateMainGUI()
     
     ; 程式啟動成功提示
-    ShowTooltip("🎉 棕色塵埃2音遊手殘救星已啟動！`n`n📋 使用步驟:`n1. 按F1恢復預設座標`n2. 按F3顯示偵測範圍`n3. 拖拽調整位置/大小`n4. 按F4開始自動化`n5. 按F12安全退出`n`n💾 設定自動儲存至: Brown_Dust2_Settings.ini", 6000)
+    ShowTooltip(GetText("tooltip_startup"), 6000)
     
 } catch as err {
     ; 初始化失敗處理
