@@ -3,7 +3,7 @@
 
 ; @Purpose: 棕色塵埃2 
 ; @Author: Sid  
-; @Version: 2.0
+; @Version: 1.0.2
 ; @LastUpdated: 2025-08-16
 ; @NewFeatures: 可調整大小的拖拽框、INI設定儲存/載入
 

@@ -67,6 +67,15 @@ AutoHotkey v2 工具，專為 **棕色塵埃2** 音樂小遊戲自動化設計�
 
 ### 🔄 更新日誌
 
+#### v1.0.2 (2026-06-08)
+**Bug 修復與 i18n 強化**
+- 🐛 **語言系統修復** - 重寫 LoadLanguage，解決 IniRead 列舉錯誤與空白值破壞問題
+- 🐛 **Overlay 控制項錯位修復** - 修正 UpdateOverlayControls ClassNN 對應，補上四角點擊區定位
+- 🐛 **Tooltip Timer 洩漏修復** - 舊 timer 不再提前清除新 tooltip
+- 🌐 **全面 i18n** - 狀態列、tooltip 訊息改為 GetText()，新增 3 組語言 keys
+- 🔧 **建置腳本** - 新增 build.ps1，一鍵編譯 exe 並打包 zip
+- 🔧 **錯誤處理改善** - 錯誤訊息不再覆蓋剪貼簿，改寫入 error.log
+
 #### v2.1 (2026-05-02)
 **拖拽體驗大幅優化**
 - ✨ **平滑拖拽** - 修復拖拽移動時的劇烈抖動，實現絕對流暢的視覺效果
@@ -132,6 +141,15 @@ Press F3 to display detection boxes, then drag to adjust positions. Here's the r
   [BrownDust2 Beat Helper.ahk](./BrownDust2%20Beat%20Helper.ahk)
 
 ### 🔄 Changelog
+
+#### v1.0.2 (2026-06-08)
+**Bug Fixes & i18n Enhancements**
+- 🐛 **Language system rewrite** - Fixed IniRead enumeration and space-stripping bugs in LoadLanguage
+- 🐛 **Overlay control mapping fix** - Corrected UpdateOverlayControls ClassNN offsets; restored corner click zones
+- 🐛 **Tooltip timer leak fix** - Old timers no longer prematurely clear new tooltips
+- 🌐 **Full i18n coverage** - Status bar and tooltips now use GetText(); added 3 missing language keys
+- 🔧 **Build script** - Added build.ps1 for one-click .exe compilation and .zip packaging
+- 🔧 **Error handling** - Errors now written to error.log instead of overwriting clipboard
 
 #### v2.1 (2026-05-02)
 **Drag Experience Major Optimization**
