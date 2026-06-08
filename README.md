@@ -39,14 +39,14 @@ AutoHotkey v2 工具，專為 **棕色塵埃2** 音樂小遊戲自動化設計�
 ### 🚀 使用方法
 1. 安裝 AutoHotkey v2
 2. 下載本專案並解壓縮
-3. 執行 `BrownDust2 Beat Helper.ahk`（建議以管理員身份）
+3. 執行 `src\BrownDust2 Beat Helper.ahk`（建議以管理員身份）
 4. 調整偵測框位置與大小，點擊啟動
 5. 開始音樂小遊戲，享受穩定輸出
 
 ### � F3 偵測框位置示範
 按 F3 顯示偵測框後，可拖拽調整位置。以下是建議的偵測框位置配置：
 
-![F3 Position Demo](image.png)
+![F3 Position Demo](assets/image.png)
 
 **偵測框說明：**
 - 🔵 **左側按鈕框** - 對準遊戲左側按鈕區域
@@ -61,9 +61,9 @@ AutoHotkey v2 工具，專為 **棕色塵埃2** 音樂小遊戲自動化設計�
 
 ### � 下載與使用
 - 直接下載並執行：  
-  [點此下載最新 EXE](./BD2屁股達人音遊腳本.exe)  
+  [點此下載最新 Release](https://github.com/Sid-1996/BrownDust2-Beat-Helper/releases)  
 - 或查看原始碼：  
-  [BrownDust2 Beat Helper.ahk](./BrownDust2%20Beat%20Helper.ahk)
+  [BrownDust2 Beat Helper.ahk](./src/BrownDust2%20Beat%20Helper.ahk)
 
 ### 🔄 更新日誌
 
@@ -114,14 +114,14 @@ Perfect for hitting perfect beats without finger fatigue.
 ### 🚀 How to Use
 1. Install AutoHotkey v2
 2. Download and extract this project
-3. Run `BrownDust2 Beat Helper.ahk` (recommended as administrator)
+3. Run `src\BrownDust2 Beat Helper.ahk` (recommended as administrator)
 4. Adjust detection box position and size, then click to start
 5. Begin the music mini-game and enjoy stable performance
 
 ### 📐 F3 Detection Box Position Demo
 Press F3 to display detection boxes, then drag to adjust positions. Here's the recommended detection box configuration:
 
-![F3 Position Demo](image.png)
+![F3 Position Demo](assets/image.png)
 
 **Detection Box Guide:**
 - 🔵 **Left Button Box** - Align with game left button area
@@ -136,9 +136,9 @@ Press F3 to display detection boxes, then drag to adjust positions. Here's the r
 
 ### 📥 Download & Usage
 - Direct download and run:  
-  [Download Latest EXE](./BD2屁股達人音遊腳本.exe)  
+  [Download Latest Release](https://github.com/Sid-1996/BrownDust2-Beat-Helper/releases)  
 - Or view source code:  
-  [BrownDust2 Beat Helper.ahk](./BrownDust2%20Beat%20Helper.ahk)
+  [BrownDust2 Beat Helper.ahk](./src/BrownDust2%20Beat%20Helper.ahk)
 
 ### 🔄 Changelog
 
