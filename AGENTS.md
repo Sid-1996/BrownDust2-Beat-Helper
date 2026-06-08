@@ -7,17 +7,23 @@ AutoHotkey v2 腳本，自動化手機遊戲《棕色塵埃2》的音遊節奏�
 ## 目錄結構
 
 ```
-├── BrownDust2 Beat Helper.ahk   # 主程式 (AutoHotkey v2)
-├── BrownDust2 Beat Helper.ico   # 應用程式圖示
-├── Brown_Dust2_Settings.ini     # 設定檔 (自動讀寫)
-├── build.ps1                    # 建置腳本 (編譯 exe + 打包 zip)
+├── src/
+│   └── BrownDust2 Beat Helper.ahk   # 主程式 (AutoHotkey v2)
+├── assets/
+│   ├── BrownDust2 Beat Helper.ico   # 應用程式圖示
+│   └── image.png                    # 示意圖
 ├── lang/
-│   ├── zh-TW.ini                # 繁體中文語言包
-│   └── en-US.ini                # 英文語言包
-├── AGENTS.md                    # 本檔案 — AI agent 工作指引
-├── CONTRIBUTING.md              # 貢獻指南
-├── README.md                    # 專案說明文件
-└── LICENSE                      # MIT License
+│   ├── zh-TW.ini                    # 繁體中文語言包
+│   └── en-US.ini                    # 英文語言包
+├── dist/                            # 建置產出 (gitignored)
+│   ├── BrownDust2 Beat Helper.exe   # 編譯後的執行檔
+│   └── BrownDust2-Beat-Helper-v*.zip
+├── Brown_Dust2_Settings.ini         # 設定檔 (自動讀寫，留根目錄)
+├── build.ps1                        # 建置腳本 (編譯 exe + 打包 zip)
+├── AGENTS.md                        # 本檔案 — AI agent 工作指引
+├── CONTRIBUTING.md                  # 貢獻指南
+├── README.md                        # 專案說明文件
+└── LICENSE                          # MIT License
 ```
 
 ## 建置流程
