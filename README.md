@@ -1,6 +1,6 @@
 # BrownDust2 Beat Helper
 
-![GitHub release (latest by date)](https://img.shields.io/github/downloads/Sid-1996/BrownDust2-Beat-Helper/latest?label=Downloads&style=flat-square)
+![GitHub all releases](https://img.shields.io/github/downloads/Sid-1996/BrownDust2-Beat-Helper/total?label=Downloads&style=flat-square)
 ![GitHub stars](https://img.shields.io/github/stars/Sid-1996/BrownDust2-Beat-Helper?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/Sid-1996/BrownDust2-Beat-Helper?style=flat-square)
 ![GitHub issues](https://img.shields.io/github/issues/Sid-1996/BrownDust2-Beat-Helper?style=flat-square)
